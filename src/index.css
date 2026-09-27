@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+/* Audio waveform animation */
+@keyframes pulseWave {
+  0%, 100% { height: 6px; }
+  50% { height: 28px; }
+}
+
+.animate-waveform-1 {
+  animation: pulseWave 0.9s ease-in-out infinite;
+}
+.animate-waveform-2 {
+  animation: pulseWave 1.3s ease-in-out 0.2s infinite;
+}
+.animate-waveform-3 {
+  animation: pulseWave 0.7s ease-in-out 0.4s infinite;
+}
+.animate-waveform-4 {
+  animation: pulseWave 1.1s ease-in-out 0.1s infinite;
+}

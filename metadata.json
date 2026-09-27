@@ -1,0 +1,7 @@
+{
+  "name": "CipherCall - Encrypted Calls & Secure Real-Time Chat",
+  "description": "End-to-end encrypted voice and video calling, peer-to-peer real-time communication, cryptographic key exchange, and self-destructing one-time messages.",
+  "requestFramePermissions": ["camera", "microphone", "display-capture"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
