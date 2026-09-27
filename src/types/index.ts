@@ -7,6 +7,8 @@ export interface User {
   publicKeyJwk?: JsonWebKey;
   verifiedContacts?: string[];
   createdAt?: number;
+  isAi?: boolean;
+  roleTitle?: string;
 }
 
 export interface EncryptedMessage {

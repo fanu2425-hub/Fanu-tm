@@ -442,6 +442,51 @@ export default function App() {
       apiService.saveMessages(currentUser.id, selectedContact.id, updated);
       return updated;
     });
+
+    // 4. Multi-Turn AI Chat with Faizan AI
+    if (selectedContact.isAi || selectedContact.username === 'faizan_ai' || selectedContact.id === 'user_faizan_ai') {
+      setPeerTypingMap((prev) => ({ ...prev, [selectedContact.id]: true }));
+
+      // Format multi-turn conversation history for Gemini
+      const conversationHistory = messages
+        .filter((m) => !m.isBurned && m.decryptedContent)
+        .slice(-10)
+        .map((m) => ({
+          role: (m.senderId === currentUser.id ? 'user' : 'model') as 'user' | 'model',
+          text: m.decryptedContent || '',
+        }));
+
+      setTimeout(async () => {
+        try {
+          const aiResponseText = await apiService.chatWithFaizanAi(payload, conversationHistory);
+          setPeerTypingMap((prev) => ({ ...prev, [selectedContact.id]: false }));
+
+          const aiMsgRecord: EncryptedMessage = {
+            id: `msg_ai_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            senderId: selectedContact.id,
+            recipientId: currentUser.id,
+            ciphertext: aiResponseText,
+            iv: '',
+            isOneTime: false,
+            burnAfterSeconds: 10,
+            mediaType: 'text',
+            timestamp: Date.now(),
+            decryptedContent: aiResponseText,
+            revealed: true,
+            remainingBurnSeconds: 10,
+          };
+
+          setMessages((prev) => {
+            const updated = [...prev, aiMsgRecord];
+            apiService.saveMessages(currentUser.id, selectedContact.id, updated);
+            return updated;
+          });
+          soundManager.playMessageReceivedTone();
+        } catch {
+          setPeerTypingMap((prev) => ({ ...prev, [selectedContact.id]: false }));
+        }
+      }, 700);
+    }
   };
 
   // Reveal one-time message & start countdown
@@ -515,6 +560,33 @@ export default function App() {
   // WebRTC Call Handlers (PeerJS MediaStream)
   const handleStartCall = async (peer: User, callType: 'audio' | 'video') => {
     if (!currentUser) return;
+
+    // Direct interactive AI session if calling Faizan AI
+    if (peer.isAi || peer.username === 'faizan_ai' || peer.id === 'user_faizan_ai') {
+      try {
+        const stream = await webrtcManager.current.startLocalMedia(callType === 'video');
+        setLocalStream(stream);
+        setRemoteStream(stream);
+
+        setActiveCall({
+          callId: `call_ai_${Date.now()}`,
+          callType,
+          peer: {
+            ...peer,
+            name: `${peer.name} (${callType === 'video' ? 'Video' : 'Voice'} Session)`,
+          },
+          isInitiator: true,
+          status: 'connected',
+          isMuted: false,
+          isVideoOff: false,
+          isScreenSharing: false,
+          isLoopbackTest: true,
+        });
+      } catch (err: any) {
+        alert('Could not start media: ' + (err.message || 'Permission denied'));
+      }
+      return;
+    }
 
     try {
       const stream = await webrtcManager.current.startLocalMedia(callType === 'video');

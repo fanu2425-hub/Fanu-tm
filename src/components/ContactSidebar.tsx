@@ -12,6 +12,7 @@ import {
   Check,
   X,
   UserCheck,
+  Sparkles,
 } from 'lucide-react';
 
 interface ContactSidebarProps {
@@ -280,7 +281,13 @@ export const ContactSidebar: React.FC<ContactSidebarProps> = ({
                       <span className="text-xs font-semibold text-slate-200 truncate group-hover:text-emerald-300">
                         {contact.name}
                       </span>
-                      {contact.publicKeyJwk && (
+                      {contact.isAi && (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-0.5 shrink-0">
+                          <Sparkles className="w-2.5 h-2.5 text-purple-400" />
+                          <span>AI</span>
+                        </span>
+                      )}
+                      {contact.publicKeyJwk && !contact.isAi && (
                         <span title="E2EE Public Key Verified" className="inline-flex shrink-0">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                         </span>

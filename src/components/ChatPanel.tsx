@@ -185,23 +185,32 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <h3 className="font-bold text-xs sm:text-sm text-slate-100 truncate">{contact.name}</h3>
-              <button
-                onClick={onOpenSafetyNumbers}
-                title="View Cryptographic Safety Numbers"
-                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors shrink-0 ${
-                  isVerified
-                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                    : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-                }`}
-              >
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span className="hidden xs:inline sm:inline">{isVerified ? 'Verified' : 'Verify'}</span>
-              </button>
+              {contact.isAi ? (
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-950 text-purple-300 border border-purple-800 shrink-0">
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  <span>AI Friend</span>
+                </span>
+              ) : (
+                <button
+                  onClick={onOpenSafetyNumbers}
+                  title="View Cryptographic Safety Numbers"
+                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors shrink-0 ${
+                    isVerified
+                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                      : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  <span className="hidden xs:inline sm:inline">{isVerified ? 'Verified' : 'Verify'}</span>
+                </button>
+              )}
             </div>
             <div className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1.5 truncate">
               <span>@{contact.username}</span>
               <span>·</span>
-              <span className="text-emerald-400/90 font-mono">E2EE</span>
+              <span className="text-emerald-400/90 font-mono">
+                {contact.isAi ? 'Gemini AI Powered' : 'E2EE'}
+              </span>
             </div>
           </div>
         </div>
@@ -233,12 +242,47 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         <div className="max-w-md mx-auto p-3 rounded-xl bg-slate-900/70 border border-slate-800/80 text-center space-y-1">
           <div className="flex items-center justify-center gap-1.5 text-emerald-400 text-xs font-semibold">
             <Lock className="w-3.5 h-3.5" />
-            <span>End-to-End Encrypted Channel</span>
+            <span>{contact.isAi ? 'Secure AI Interaction Channel' : 'End-to-End Encrypted Channel'}</span>
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            Messages, voice notes, and calls are secured with client-side AES-GCM-256. No unencrypted content ever touches the server.
+            {contact.isAi
+              ? 'Multi-turn chat powered by Gemini. Ask Faizan AI anything about cybersecurity, cryptography, privacy, or chat freely!'
+              : 'Messages, voice notes, and calls are secured with client-side AES-GCM-256. No unencrypted content ever touches the server.'}
           </p>
         </div>
+
+        {/* Faizan AI Welcome Card with Quick Questions */}
+        {contact.isAi && messages.length === 0 && (
+          <div className="max-w-md mx-auto p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 to-slate-900 border border-purple-800/40 text-center space-y-3 my-4">
+            <div className="w-12 h-12 rounded-full bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mx-auto text-purple-300 shadow-lg shadow-purple-500/10">
+              <Sparkles className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white">Welcome to Faizan AI!</h4>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                I am your built-in AI companion and friend on CipherCall, created to represent Faizan. I can answer questions, discuss privacy and encryption, or just keep you company.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left pt-1">
+              {[
+                "Explain CipherCall's encryption",
+                "Give me a cybersecurity tip",
+                "Who is Faizan?",
+                "How does self-destructing work?",
+              ].map((promptText, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onSendMessage(promptText, false, 'text')}
+                  className="text-xs p-2.5 rounded-xl bg-slate-800/80 hover:bg-purple-900/40 border border-slate-700/60 hover:border-purple-600/50 text-slate-300 hover:text-white transition-all text-left flex items-center gap-2 group"
+                >
+                  <span className="text-purple-400 text-sm">💡</span>
+                  <span className="truncate group-hover:text-purple-200">{promptText}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Message Thread */}
         {messages.map((msg) => {

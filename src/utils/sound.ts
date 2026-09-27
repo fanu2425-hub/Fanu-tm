@@ -192,6 +192,27 @@ class AudioSynthesizer {
       whiteNoise.stop(now + 0.35);
     } catch {}
   }
+
+  /**
+   * Play short pleasant notification tone for incoming messages
+   */
+  playMessageReceivedTone() {
+    try {
+      const ctx = this.getContext();
+      const now = ctx.currentTime;
+      [659.25, 880].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.06, now + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + i * 0.08);
+        osc.stop(now + i * 0.08 + 0.2);
+      });
+    } catch {}
+  }
 }
 
 export const soundManager = new AudioSynthesizer();

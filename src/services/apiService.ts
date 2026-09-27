@@ -40,6 +40,17 @@ function saveLocalAccounts(accounts: Record<string, { user: User; passwordHash: 
   localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(accounts));
 }
 
+export const FAIZAN_AI_USER: User = {
+  id: 'user_faizan_ai',
+  username: 'faizan_ai',
+  name: 'Faizan AI',
+  avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&auto=format&fit=crop&q=80',
+  status: 'online',
+  isAi: true,
+  roleTitle: 'Built-in AI Friend & Cyber Intelligence',
+  createdAt: 1700000000000,
+};
+
 export const apiService = {
   isStaticDeployment: false,
 
@@ -149,21 +160,38 @@ export const apiService = {
   },
 
   async getContacts(userId: string): Promise<User[]> {
+    let list: User[] = [];
     try {
       const res = await fetch(`/api/users/${userId}/contacts`);
       const { isJson, data } = await parseJsonResponse<User[]>(res);
       if (res.ok && isJson && Array.isArray(data)) {
-        return data;
+        list = data;
       }
     } catch {}
 
-    // Fallback: LocalStorage
-    try {
-      const raw = localStorage.getItem(`${LOCAL_CONTACTS_KEY}${userId}`);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
+    if (list.length === 0) {
+      // Fallback: LocalStorage
+      try {
+        const raw = localStorage.getItem(`${LOCAL_CONTACTS_KEY}${userId}`);
+        list = raw ? JSON.parse(raw) : [];
+      } catch {
+        list = [];
+      }
     }
+
+    // Always include Faizan AI as the primary built-in friend & companion
+    const hasFaizan = list.some((u) => u.id === FAIZAN_AI_USER.id || u.username === FAIZAN_AI_USER.username);
+    if (!hasFaizan) {
+      list = [FAIZAN_AI_USER, ...list];
+    } else {
+      list = list.map((u) =>
+        u.id === FAIZAN_AI_USER.id || u.username === FAIZAN_AI_USER.username
+          ? { ...FAIZAN_AI_USER, ...u, isAi: true, status: 'online' }
+          : u
+      );
+    }
+
+    return list;
   },
 
   async addContact(userId: string, targetUsername: string): Promise<User> {
@@ -230,6 +258,41 @@ export const apiService = {
       return raw ? JSON.parse(raw) : [];
     } catch {
       return [];
+    }
+  },
+
+  async chatWithFaizanAi(
+    message: string,
+    history: { role: 'user' | 'model'; text: string }[] = []
+  ): Promise<string> {
+    // 1. Try server-side Gemini API route first
+    try {
+      const res = await fetch('/api/chat/faizan-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, history }),
+      });
+      const { isJson, data } = await parseJsonResponse<any>(res);
+      if (res.ok && isJson && data?.reply) {
+        return data.reply;
+      }
+      if (isJson && data?.fallback) {
+        return data.fallback;
+      }
+    } catch {}
+
+    // 2. Intelligent client-side fallback if running purely on static host without backend
+    const lower = message.toLowerCase().trim();
+    if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
+      return "Hey there! I'm Faizan AI, your built-in friend and security companion on CipherCall. How's everything going today?";
+    } else if (lower.includes('who are you') || lower.includes('faizan') || lower.includes('creator')) {
+      return "I'm Faizan AI! I was created to represent Faizan, the creator and owner of CipherCall. I'm here to chat, keep you company, answer cybersecurity and privacy questions, and help test encrypted calls!";
+    } else if (lower.includes('how does encryption work') || lower.includes('e2ee') || lower.includes('security')) {
+      return "CipherCall secures every conversation using ECDH (Elliptic Curve Diffie-Hellman) P-256 for key agreement and AES-256-GCM for authenticated symmetric encryption. Your private keys never leave your browser!";
+    } else if (lower.includes('call') || lower.includes('video') || lower.includes('voice')) {
+      return "You can start an encrypted Voice or Video call with any contact using the buttons at the top of the chat, or tap 'Hardware Test' to run an echo test!";
+    } else {
+      return `I hear you! As your built-in companion Faizan AI, I'm always online whenever you need advice, want to test encrypted messaging, or just hang out. What else would you like to explore?`;
     }
   },
 };
