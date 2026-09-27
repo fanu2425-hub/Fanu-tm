@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User } from '../types';
 import { Shield, Lock, UserPlus, LogIn, CheckCircle2, User as UserIcon, Sparkles } from 'lucide-react';
 import { generateIdentityKeyPair } from '../utils/crypto';
+import { apiService } from '../services/apiService';
 
 interface AuthModalProps {
   onLoginSuccess: (user: User, token: string) => void;
@@ -74,39 +75,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onLoginSuccess, initialUse
 
         const avatarDataUri = getAvatarDataUri(name, selectedAvatarId);
 
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: cleanUsername,
-            password,
-            name: name.trim() || cleanUsername,
-            avatar: avatarDataUri,
-            publicKeyJwk: keys.publicKeyJwk,
-          }),
+        const result = await apiService.register({
+          username: cleanUsername,
+          password,
+          name: name.trim() || cleanUsername,
+          avatar: avatarDataUri,
+          publicKeyJwk: keys.publicKeyJwk,
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Registration failed');
 
         // Store keys locally mapped to user id
         localStorage.setItem(
-          `ciphercall_keys_${data.user.id}`,
+          `ciphercall_keys_${result.user.id}`,
           JSON.stringify({
             publicKeyJwk: keys.publicKeyJwk,
             privateKeyJwk: keys.privateKeyJwk,
           })
         );
 
-        onLoginSuccess(data.user, data.token);
+        onLoginSuccess(result.user, result.token);
       } else {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: cleanUsername, password }),
+        const result = await apiService.login({
+          username: cleanUsername,
+          password,
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Invalid credentials');
-        onLoginSuccess(data.user, data.token);
+        onLoginSuccess(result.user, result.token);
       }
     } catch (err: any) {
       setError(err.message || 'Authentication error');
