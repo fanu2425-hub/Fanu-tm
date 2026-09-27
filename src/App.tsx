@@ -48,6 +48,7 @@ export default function App() {
   // WebRTC, PeerJS & Cryptography instances
   const webrtcManager = useRef<WebRTCManager>(new WebRTCManager());
   const peerManager = useRef<PeerManager | null>(null);
+  const peerEventsRef = useRef<any>({});
   const incomingMediaConnRef = useRef<MediaConnection | null>(null);
   const activeMediaConnRef = useRef<MediaConnection | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -210,61 +211,88 @@ export default function App() {
     [currentUser, allUsers, selectedContact]
   );
 
-  // 3. Initialize PeerJS (Serverless P2P WebRTC for Netlify & static environments)
+  // Keep peer events updated with latest state without destroying the Peer instance
+  peerEventsRef.current = {
+    onPeerReady: (id: string) => {
+      console.log('CipherCall P2P Peer Ready:', id);
+    },
+    onIncomingCall: (mediaConn: MediaConnection, callerInfo: { username: string; callType: 'audio' | 'video' }) => {
+      let callerUser = allUsers.find((u) => u.username.toLowerCase() === callerInfo.username.toLowerCase());
+      if (!callerUser) {
+        callerUser = {
+          id: `usr_${callerInfo.username}`,
+          username: callerInfo.username,
+          name: callerInfo.username,
+          avatar: '/src/assets/images/security_badge_1790514198301.jpg',
+          status: 'in-call',
+        };
+        setAllUsers((prev) => [...prev, callerUser!]);
+      }
+
+      incomingMediaConnRef.current = mediaConn;
+
+      // Listen for caller disconnecting before callee answers
+      mediaConn.on('close', () => {
+        if (incomingMediaConnRef.current === mediaConn) {
+          incomingMediaConnRef.current = null;
+        }
+        setActiveCall((prev) => (prev?.callId === mediaConn.connectionId ? null : prev));
+      });
+
+      mediaConn.on('error', (err) => {
+        console.warn('MediaConnection error:', err);
+        if (incomingMediaConnRef.current === mediaConn) {
+          incomingMediaConnRef.current = null;
+        }
+        setActiveCall(null);
+      });
+
+      setActiveCall({
+        callId: mediaConn.connectionId || `call_${Date.now()}`,
+        callType: callerInfo.callType,
+        peer: callerUser,
+        isInitiator: false,
+        status: 'incoming',
+        isMuted: false,
+        isVideoOff: false,
+        isScreenSharing: false,
+      });
+    },
+    onIncomingMessage: (msg: EncryptedMessage) => {
+      handleReceiveEncryptedMessage(msg);
+    },
+    onMessageBurned: (messageId: string) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, isBurned: true, decryptedContent: '' } : m))
+      );
+      soundManager.playBurnTone();
+    },
+    onTyping: (senderUsername: string, isTyping: boolean) => {
+      const target = allUsers.find((u) => u.username.toLowerCase() === senderUsername.toLowerCase());
+      if (target) {
+        setPeerTypingMap((prev) => ({ ...prev, [target.id]: isTyping }));
+      }
+    },
+    onPeerKeyExchange: (senderUsername: string, peerJwk: JsonWebKey) => {
+      setAllUsers((prev) =>
+        prev.map((u) =>
+          u.username.toLowerCase() === senderUsername.toLowerCase() ? { ...u, publicKeyJwk: peerJwk } : u
+        )
+      );
+    },
+  };
+
+  // 3. Initialize PeerJS once per user session (Serverless P2P WebRTC for Netlify & static environments)
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser?.username) return;
 
     const pm = new PeerManager({
-      onPeerReady: (id) => {
-        console.log('CipherCall P2P Peer Ready:', id);
-      },
-      onIncomingCall: (mediaConn, callerInfo) => {
-        let callerUser = allUsers.find((u) => u.username.toLowerCase() === callerInfo.username.toLowerCase());
-        if (!callerUser) {
-          callerUser = {
-            id: `usr_${callerInfo.username}`,
-            username: callerInfo.username,
-            name: callerInfo.username,
-            avatar: '/src/assets/images/security_badge_1790514198301.jpg',
-            status: 'in-call',
-          };
-          setAllUsers((prev) => [...prev, callerUser!]);
-        }
-
-        incomingMediaConnRef.current = mediaConn;
-        setActiveCall({
-          callId: `call_${Date.now()}`,
-          callType: callerInfo.callType,
-          peer: callerUser,
-          isInitiator: false,
-          status: 'incoming',
-          isMuted: false,
-          isVideoOff: false,
-          isScreenSharing: false,
-        });
-      },
-      onIncomingMessage: (msg) => {
-        handleReceiveEncryptedMessage(msg);
-      },
-      onMessageBurned: (messageId) => {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === messageId ? { ...m, isBurned: true, decryptedContent: '' } : m))
-        );
-        soundManager.playBurnTone();
-      },
-      onTyping: (senderUsername, isTyping) => {
-        const target = allUsers.find((u) => u.username.toLowerCase() === senderUsername.toLowerCase());
-        if (target) {
-          setPeerTypingMap((prev) => ({ ...prev, [target.id]: isTyping }));
-        }
-      },
-      onPeerKeyExchange: (senderUsername, peerJwk) => {
-        setAllUsers((prev) =>
-          prev.map((u) =>
-            u.username.toLowerCase() === senderUsername.toLowerCase() ? { ...u, publicKeyJwk: peerJwk } : u
-          )
-        );
-      },
+      onPeerReady: (id) => peerEventsRef.current.onPeerReady?.(id),
+      onIncomingCall: (conn, info) => peerEventsRef.current.onIncomingCall?.(conn, info),
+      onIncomingMessage: (msg) => peerEventsRef.current.onIncomingMessage?.(msg),
+      onMessageBurned: (id) => peerEventsRef.current.onMessageBurned?.(id),
+      onTyping: (u, typing) => peerEventsRef.current.onTyping?.(u, typing),
+      onPeerKeyExchange: (u, jwk) => peerEventsRef.current.onPeerKeyExchange?.(u, jwk),
     });
 
     peerManager.current = pm;
@@ -272,8 +300,9 @@ export default function App() {
 
     return () => {
       pm.destroy();
+      peerManager.current = null;
     };
-  }, [currentUser?.username, handleReceiveEncryptedMessage]);
+  }, [currentUser?.username]);
 
   // 4. Connect WebSocket (If Node server is present, e.g. dev or container)
   useEffect(() => {
@@ -517,6 +546,11 @@ export default function App() {
           mediaConn.on('close', () => {
             handleHangupCall();
           });
+
+          mediaConn.on('error', (err) => {
+            console.warn('Outgoing call error:', err);
+            handleHangupCall();
+          });
         }
       }
     } catch (err: any) {
@@ -528,33 +562,48 @@ export default function App() {
   const handleAcceptCall = async (withVideo: boolean) => {
     if (!activeCall) return;
     try {
+      const mediaConn = incomingMediaConnRef.current;
+      if (!mediaConn || (mediaConn as any)._negotiator === null) {
+        throw new Error('The caller disconnected before the call could be answered.');
+      }
+
       const stream = await webrtcManager.current.startLocalMedia(withVideo);
       setLocalStream(stream);
 
-      if (incomingMediaConnRef.current) {
-        incomingMediaConnRef.current.answer(stream);
-        activeMediaConnRef.current = incomingMediaConnRef.current;
+      mediaConn.on('stream', (rStream) => {
+        setRemoteStream(rStream);
+        setActiveCall((prev) => (prev ? { ...prev, status: 'connected' } : null));
+      });
 
-        incomingMediaConnRef.current.on('stream', (rStream) => {
-          setRemoteStream(rStream);
-          setActiveCall((prev) => (prev ? { ...prev, status: 'connected' } : null));
-        });
+      mediaConn.on('close', () => {
+        handleHangupCall();
+      });
 
-        incomingMediaConnRef.current.on('close', () => {
-          handleHangupCall();
-        });
+      mediaConn.on('error', (err) => {
+        console.warn('Call error:', err);
+        handleHangupCall();
+      });
+
+      if (peerManager.current) {
+        peerManager.current.answerCall(mediaConn, stream);
+      } else {
+        mediaConn.answer(stream);
       }
+      activeMediaConnRef.current = mediaConn;
 
       setActiveCall((prev) => (prev ? { ...prev, status: 'connected' } : null));
     } catch (err: any) {
       alert('Could not start media: ' + (err.message || 'Permission denied'));
+      handleHangupCall();
     }
   };
 
   // Reject incoming call
   const handleRejectCall = () => {
     if (incomingMediaConnRef.current) {
-      incomingMediaConnRef.current.close();
+      try {
+        incomingMediaConnRef.current.close();
+      } catch {}
       incomingMediaConnRef.current = null;
     }
     webrtcManager.current.closePeerConnection();
@@ -564,11 +613,15 @@ export default function App() {
   // Hangup call
   const handleHangupCall = () => {
     if (activeMediaConnRef.current) {
-      activeMediaConnRef.current.close();
+      try {
+        activeMediaConnRef.current.close();
+      } catch {}
       activeMediaConnRef.current = null;
     }
     if (incomingMediaConnRef.current) {
-      incomingMediaConnRef.current.close();
+      try {
+        incomingMediaConnRef.current.close();
+      } catch {}
       incomingMediaConnRef.current = null;
     }
     webrtcManager.current.closePeerConnection();
