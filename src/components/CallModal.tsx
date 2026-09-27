@@ -116,30 +116,30 @@ export const CallModal: React.FC<CallModalProps> = ({
   // 1. INCOMING CALL SCREEN
   if (call.status === 'incoming') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
-        <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+      <div className="fixed inset-0 h-[100dvh] w-screen z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
+        <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-center shadow-2xl relative overflow-hidden">
           {/* Subtle pulse background */}
           <div className="absolute inset-0 bg-emerald-500/5 animate-pulse" />
 
           <div className="relative z-10 flex flex-col items-center">
             {/* Avatar with animated rings */}
-            <div className="relative mb-6">
+            <div className="relative mb-4 sm:mb-6">
               <div className="absolute inset-0 -m-3 rounded-full border border-emerald-500/30 animate-ping opacity-75" />
               <div className="absolute inset-0 -m-1.5 rounded-full border border-emerald-500/50 animate-pulse" />
               <img
                 src={call.peer.avatar}
                 alt={call.peer.name}
                 referrerPolicy="no-referrer"
-                className="w-24 h-24 rounded-full object-cover border-2 border-emerald-500 ring-4 ring-emerald-500/20 shadow-xl"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-emerald-500 ring-4 ring-emerald-500/20 shadow-xl"
               />
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-1">{call.peer.name}</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{call.peer.name}</h3>
             <p className="text-xs text-slate-400 font-mono mb-4">@{call.peer.username}</p>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs font-medium mb-8">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs font-medium mb-6 sm:mb-8">
               <Lock className="w-3 h-3 text-emerald-400" />
-              <span>Incoming Encrypted {isVideo ? 'Video' : 'Voice'} Call</span>
+              <span>Incoming {isVideo ? 'Video' : 'Voice'} Call</span>
             </div>
 
             {/* Answer & Decline Buttons */}
@@ -148,8 +148,8 @@ export const CallModal: React.FC<CallModalProps> = ({
                 onClick={onReject}
                 className="flex flex-col items-center gap-2 group"
               >
-                <div className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center text-white shadow-lg shadow-red-600/30 group-hover:scale-105 transition-all">
-                  <PhoneOff className="w-6 h-6" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center text-white shadow-lg shadow-red-600/30 group-hover:scale-105 transition-all">
+                  <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <span className="text-xs text-slate-400 font-medium">Decline</span>
               </button>
@@ -158,8 +158,8 @@ export const CallModal: React.FC<CallModalProps> = ({
                 onClick={() => onAccept(isVideo)}
                 className="flex flex-col items-center gap-2 group"
               >
-                <div className="w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center text-slate-950 shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-all">
-                  {isVideo ? <Video className="w-6 h-6" /> : <Phone className="w-6 h-6" />}
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center text-slate-950 shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-all">
+                  {isVideo ? <Video className="w-5 h-5 sm:w-6 sm:h-6" /> : <Phone className="w-5 h-5 sm:w-6 sm:h-6" />}
                 </div>
                 <span className="text-xs text-emerald-400 font-medium">Accept</span>
               </button>
@@ -173,33 +173,33 @@ export const CallModal: React.FC<CallModalProps> = ({
   // 2. CALLING / OUTGOING DIALING SCREEN
   if (call.status === 'calling') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
-        <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+      <div className="fixed inset-0 h-[100dvh] w-screen z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
+        <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-center shadow-2xl relative overflow-hidden">
           <div className="relative z-10 flex flex-col items-center">
             {/* Avatar */}
-            <div className="relative mb-6">
+            <div className="relative mb-4 sm:mb-6">
               <div className="absolute inset-0 -m-3 rounded-full border border-emerald-500/20 animate-pulse" />
               <img
                 src={call.peer.avatar}
                 alt={call.peer.name}
                 referrerPolicy="no-referrer"
-                className="w-24 h-24 rounded-full object-cover border-2 border-emerald-500/80 shadow-xl"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-emerald-500/80 shadow-xl"
               />
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-1">{call.peer.name}</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-1">{call.peer.name}</h3>
             <p className="text-xs text-slate-400 font-mono mb-4">@{call.peer.username}</p>
 
-            <div className="flex items-center gap-2 text-xs text-emerald-400 font-mono mb-8 animate-pulse">
+            <div className="flex items-center gap-2 text-xs text-emerald-400 font-mono mb-6 sm:mb-8 animate-pulse">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              Securing end-to-end DTLS session...
+              Securing E2EE session...
             </div>
 
             <button
               onClick={onHangup}
-              className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center text-white shadow-lg shadow-red-600/30 hover:scale-105 transition-all"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center text-white shadow-lg shadow-red-600/30 hover:scale-105 transition-all"
             >
-              <PhoneOff className="w-6 h-6" />
+              <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
             <span className="text-xs text-slate-400 mt-2">Cancel Call</span>
           </div>
@@ -212,7 +212,7 @@ export const CallModal: React.FC<CallModalProps> = ({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white overflow-hidden animate-in fade-in duration-300"
+      className="fixed inset-0 h-[100dvh] w-screen z-50 flex flex-col bg-slate-950 text-white overflow-hidden animate-in fade-in duration-300"
     >
       {/* Top Overlay Bar */}
       <div className="absolute top-0 left-0 right-0 p-4 z-20 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/40 to-transparent">
@@ -280,7 +280,7 @@ export const CallModal: React.FC<CallModalProps> = ({
             )}
 
             {/* Local Video Stream (Picture-in-Picture) */}
-            <div className="absolute bottom-24 right-6 w-36 h-48 sm:w-48 sm:h-64 rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-900 shadow-2xl z-20">
+            <div className="absolute bottom-24 right-4 sm:right-6 w-24 h-32 sm:w-44 sm:h-56 rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-900 shadow-2xl z-20">
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -289,12 +289,12 @@ export const CallModal: React.FC<CallModalProps> = ({
                 className={`w-full h-full object-cover ${call.isVideoOff ? 'hidden' : ''}`}
               />
               {call.isVideoOff && (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-slate-400 text-xs p-2 text-center">
-                  <VideoOff className="w-6 h-6 mb-1 text-slate-500" />
-                  <span>Your Camera Off</span>
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-slate-400 text-[10px] sm:text-xs p-2 text-center">
+                  <VideoOff className="w-5 h-5 mb-1 text-slate-500" />
+                  <span>Camera Off</span>
                 </div>
               )}
-              <div className="absolute bottom-2 left-2 text-[10px] font-medium bg-black/60 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">
+              <div className="absolute bottom-1.5 left-1.5 text-[9px] sm:text-[10px] font-medium bg-black/60 px-1.5 py-0.5 rounded text-white backdrop-blur-sm">
                 You {call.isMuted && '· Muted'}
               </div>
             </div>
@@ -336,53 +336,53 @@ export const CallModal: React.FC<CallModalProps> = ({
       </div>
 
       {/* In-Call Floating Control Bar */}
-      <div className="p-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex items-center justify-center gap-4 z-20">
+      <div className="p-4 sm:p-6 pb-6 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex items-center justify-center gap-3 sm:gap-4 z-20">
         {/* Mic Toggle */}
         <button
           onClick={onToggleMute}
           title={call.isMuted ? 'Unmute Microphone' : 'Mute Microphone'}
-          className={`p-4 rounded-full transition-all ${
+          className={`p-3.5 sm:p-4 rounded-full transition-all ${
             call.isMuted
               ? 'bg-red-600 hover:bg-red-500 text-white'
               : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
           }`}
         >
-          {call.isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+          {call.isMuted ? <MicOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
         </button>
 
         {/* Video Toggle */}
         <button
           onClick={onToggleVideo}
           title={call.isVideoOff ? 'Enable Camera' : 'Disable Camera'}
-          className={`p-4 rounded-full transition-all ${
+          className={`p-3.5 sm:p-4 rounded-full transition-all ${
             call.isVideoOff
               ? 'bg-red-600 hover:bg-red-500 text-white'
               : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
           }`}
         >
-          {call.isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+          {call.isVideoOff ? <VideoOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Video className="w-5 h-5 sm:w-6 sm:h-6" />}
         </button>
 
         {/* Screen Share */}
         <button
           onClick={onToggleScreenShare}
           title={call.isScreenSharing ? 'Stop Screen Share' : 'Share Screen'}
-          className={`p-4 rounded-full transition-all ${
+          className={`p-3.5 sm:p-4 rounded-full transition-all ${
             call.isScreenSharing
               ? 'bg-emerald-500 text-slate-950 font-bold'
               : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
           }`}
         >
-          <ScreenShare className="w-6 h-6" />
+          <ScreenShare className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
         {/* End Call / Hangup */}
         <button
           onClick={onHangup}
           title="Hang Up"
-          className="p-4 rounded-full bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-600/40 hover:scale-105 transition-all"
+          className="p-3.5 sm:p-4 rounded-full bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-600/40 hover:scale-105 transition-all"
         >
-          <PhoneOff className="w-6 h-6" />
+          <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
     </div>

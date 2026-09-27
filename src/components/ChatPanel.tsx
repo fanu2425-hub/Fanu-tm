@@ -18,6 +18,7 @@ import {
   Clock,
   Sparkles,
   Info,
+  ArrowLeft,
 } from 'lucide-react';
 import { soundManager } from '../utils/sound';
 
@@ -33,6 +34,7 @@ interface ChatPanelProps {
   isVerified: boolean;
   isPeerTyping?: boolean;
   onTyping?: (isTyping: boolean) => void;
+  onBack?: () => void;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({
@@ -47,6 +49,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   isVerified,
   isPeerTyping = false,
   onTyping,
+  onBack,
 }) => {
   const [inputText, setInputText] = useState('');
   const [isOneTimeMode, setIsOneTimeMode] = useState(false);
@@ -150,14 +153,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-950 overflow-hidden">
       {/* Chat Header */}
-      <div className="h-16 px-6 border-b border-slate-800 bg-slate-900/60 backdrop-blur-sm flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="relative">
+      <div className="h-14 sm:h-16 px-3 sm:px-6 border-b border-slate-800 bg-slate-900/60 backdrop-blur-sm flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-1.5 -ml-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 md:hidden shrink-0"
+              title="Back to contacts list"
+            >
+              <ArrowLeft className="w-5 h-5 text-slate-300" />
+            </button>
+          )}
+          <div className="relative shrink-0">
             <img
               src={contact.avatar}
               alt={contact.name}
               referrerPolicy="no-referrer"
-              className="w-10 h-10 rounded-full object-cover border border-slate-700"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border border-slate-700"
             />
             <span
               className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-slate-900 ${
@@ -170,47 +182,47 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             />
           </div>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-sm text-slate-100">{contact.name}</h3>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h3 className="font-bold text-xs sm:text-sm text-slate-100 truncate">{contact.name}</h3>
               <button
                 onClick={onOpenSafetyNumbers}
                 title="View Cryptographic Safety Numbers"
-                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors shrink-0 ${
                   isVerified
                     ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                     : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
                 }`}
               >
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span>{isVerified ? 'Verified' : 'Verify'}</span>
+                <span className="hidden xs:inline sm:inline">{isVerified ? 'Verified' : 'Verify'}</span>
               </button>
             </div>
-            <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+            <div className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1.5 truncate">
               <span>@{contact.username}</span>
               <span>·</span>
-              <span className="text-emerald-400/90 font-mono">ECDH P-256 Shared Key</span>
+              <span className="text-emerald-400/90 font-mono">E2EE</span>
             </div>
           </div>
         </div>
 
         {/* Call Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={() => onStartCall(contact, 'audio')}
             title="Start Encrypted Voice Call"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors"
           >
             <Phone className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Voice Call</span>
+            <span className="hidden sm:inline">Voice</span>
           </button>
           <button
             onClick={() => onStartCall(contact, 'video')}
             title="Start Encrypted Video Call"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-semibold transition-colors shadow-sm"
+            className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-semibold transition-colors shadow-sm"
           >
             <Video className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Video Call</span>
+            <span className="hidden sm:inline">Video</span>
           </button>
         </div>
       </div>

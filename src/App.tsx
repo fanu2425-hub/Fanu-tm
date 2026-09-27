@@ -727,15 +727,16 @@ export default function App() {
   };
 
   // Auto-select first available contact if none selected
+  // Auto-select first available contact only on larger desktop screens
   useEffect(() => {
-    if (!selectedContact && currentUser && allUsers.length > 0) {
+    if (!selectedContact && currentUser && allUsers.length > 0 && typeof window !== 'undefined' && window.innerWidth >= 768) {
       const first = allUsers.find((u) => u.id !== currentUser.id);
       if (first) setSelectedContact(first);
     }
   }, [allUsers, currentUser, selectedContact]);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
+    <div className="h-[100dvh] min-h-[100dvh] max-h-[100dvh] w-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
       {/* 1. Real Auth Modal if not logged in */}
       {!currentUser && (
         <AuthModal
@@ -763,7 +764,7 @@ export default function App() {
 
       {/* 3. Main Workspace Area */}
       {currentUser && (
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0">
           {activeView === 'security' ? (
             <SecurityView
               currentUser={currentUser}
@@ -774,42 +775,47 @@ export default function App() {
             />
           ) : (
             <>
-              {/* Sidebar with Contacts */}
-              <ContactSidebar
-                contacts={allUsers}
-                currentUserId={currentUser.id}
-                currentUsername={currentUser.username}
-                selectedContact={selectedContact}
-                onSelectContact={(c) => setSelectedContact(c)}
-                onStartCall={handleStartCall}
-                onStartLoopbackTest={handleStartLoopbackTest}
-                onAddContactByUsername={handleAddContactByUsername}
-              />
-
-              {/* Chat View */}
-              {selectedContact ? (
-                <ChatPanel
-                  currentUser={currentUser}
-                  contact={selectedContact}
-                  messages={messages}
-                  onSendMessage={handleSendMessage}
-                  onBurnMessage={handleBurnMessage}
-                  onRevealOneTime={handleRevealOneTime}
+              {/* Sidebar with Contacts (Shown on mobile when NO contact is selected) */}
+              <div className={`h-full ${selectedContact ? 'hidden md:flex' : 'flex'} w-full md:w-80 shrink-0`}>
+                <ContactSidebar
+                  contacts={allUsers}
+                  currentUserId={currentUser.id}
+                  currentUsername={currentUser.username}
+                  selectedContact={selectedContact}
+                  onSelectContact={(c) => setSelectedContact(c)}
                   onStartCall={handleStartCall}
-                  onOpenSafetyNumbers={() => setShowSafetyModal(true)}
-                  isVerified={verifiedContactIds.includes(selectedContact.id)}
-                  isPeerTyping={peerTypingMap[selectedContact.id]}
-                  onTyping={handleTyping}
+                  onStartLoopbackTest={handleStartLoopbackTest}
+                  onAddContactByUsername={handleAddContactByUsername}
                 />
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500">
-                  <MessageSquare className="w-12 h-12 text-slate-700 mb-3" />
-                  <h3 className="text-base font-semibold text-slate-300">No Contact Selected</h3>
-                  <p className="text-xs text-slate-500 max-w-sm mt-1">
-                    Select a contact or click &quot;Add&quot; in the left sidebar to connect with another username.
-                  </p>
-                </div>
-              )}
+              </div>
+
+              {/* Chat View (Shown on mobile when a contact IS selected, with Back button) */}
+              <div className={`h-full flex-1 ${!selectedContact ? 'hidden md:flex' : 'flex'} flex-col min-w-0`}>
+                {selectedContact ? (
+                  <ChatPanel
+                    currentUser={currentUser}
+                    contact={selectedContact}
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    onBurnMessage={handleBurnMessage}
+                    onRevealOneTime={handleRevealOneTime}
+                    onStartCall={handleStartCall}
+                    onOpenSafetyNumbers={() => setShowSafetyModal(true)}
+                    isVerified={verifiedContactIds.includes(selectedContact.id)}
+                    isPeerTyping={peerTypingMap[selectedContact.id]}
+                    onTyping={handleTyping}
+                    onBack={() => setSelectedContact(null)}
+                  />
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500">
+                    <MessageSquare className="w-12 h-12 text-slate-700 mb-3" />
+                    <h3 className="text-base font-semibold text-slate-300">No Contact Selected</h3>
+                    <p className="text-xs text-slate-500 max-w-sm mt-1">
+                      Select a contact or click &quot;Add&quot; in the left sidebar to connect with another username.
+                    </p>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

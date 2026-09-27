@@ -92,7 +92,7 @@ export const ContactSidebar: React.FC<ContactSidebarProps> = ({
   };
 
   return (
-    <aside className="w-80 border-r border-slate-800 bg-slate-900/40 flex flex-col h-full shrink-0">
+    <aside className="w-full md:w-80 border-r border-slate-800 bg-slate-900/40 flex flex-col h-full shrink-0">
       {/* Sidebar Header */}
       <div className="p-4 border-b border-slate-800/80 space-y-3">
         <div className="flex items-center justify-between">
