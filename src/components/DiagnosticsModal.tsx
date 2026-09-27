@@ -116,7 +116,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({ onClose, onS
         <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-bold text-base text-white">Diagnostics & WebRTC Diagnostics</h3>
+            <h3 className="font-bold text-base text-white">Audio, Video & Hardware Diagnostics</h3>
           </div>
           <button
             onClick={onClose}
@@ -133,10 +133,10 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({ onClose, onS
             <div>
               <h4 className="font-semibold text-sm text-emerald-300 flex items-center gap-2">
                 <Headphones className="w-4 h-4" />
-                Single-User Echo & Call Loopback
+                Hardware Echo & Call Latency Check
               </h4>
               <p className="text-xs text-slate-400 mt-0.5">
-                Test audio latency, video frame rate, and in-call controls locally with full echo cancellation.
+                Verify your microphone levels, video stream, and speaker output with full acoustic echo cancellation.
               </p>
             </div>
             <button
@@ -146,7 +146,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({ onClose, onS
               }}
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-xs transition-colors shrink-0 shadow-sm"
             >
-              Start Loopback
+              Start Echo Test
             </button>
           </div>
 

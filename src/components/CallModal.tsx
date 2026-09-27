@@ -228,7 +228,7 @@ export const CallModal: React.FC<CallModalProps> = ({
               <h4 className="font-bold text-sm text-white">{call.peer.name}</h4>
               {call.isLoopbackTest && (
                 <span className="text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">
-                  Loopback Test
+                  Echo Check
                 </span>
               )}
             </div>

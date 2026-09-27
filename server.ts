@@ -41,44 +41,10 @@ export interface EncryptedMessageRecord {
   fileSize?: number;
 }
 
+// Real user directory and encrypted message storage
 const users: Map<string, UserRecord> = new Map();
+const userContactsMap: Map<string, Set<string>> = new Map(); // userId -> Set of contact userIds
 const messages: EncryptedMessageRecord[] = [];
-
-// Seed Initial Demo Accounts
-const seedUsers: UserRecord[] = [
-  {
-    id: 'user_alice',
-    username: 'alice',
-    name: 'Alice Vance',
-    avatar: '/src/assets/images/avatar_alice_1790514166458.jpg',
-    status: 'online',
-    passwordHash: 'password123',
-    verifiedContacts: ['user_bob'],
-    createdAt: Date.now() - 86400000 * 5,
-  },
-  {
-    id: 'user_bob',
-    username: 'bob',
-    name: 'Bob Martin',
-    avatar: '/src/assets/images/avatar_bob_1790514176036.jpg',
-    status: 'online',
-    passwordHash: 'password123',
-    verifiedContacts: ['user_alice'],
-    createdAt: Date.now() - 86400000 * 4,
-  },
-  {
-    id: 'user_charlie',
-    username: 'charlie',
-    name: 'Charlie Chen',
-    avatar: '/src/assets/images/avatar_charlie_1790514186867.jpg',
-    status: 'online',
-    passwordHash: 'password123',
-    verifiedContacts: [],
-    createdAt: Date.now() - 86400000 * 3,
-  },
-];
-
-seedUsers.forEach((u) => users.set(u.id, u));
 
 // Track connected WebSockets by User ID (Supports multiple tabs/devices per user)
 const userSockets = new Map<string, Set<WebSocket>>();
@@ -116,7 +82,7 @@ app.post('/api/auth/register', (req, res) => {
     id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     username: username.toLowerCase().trim(),
     name: name.trim(),
-    avatar: avatar || '/src/assets/images/avatar_alice_1790514166458.jpg',
+    avatar: avatar || '/src/assets/images/security_badge_1790514198301.jpg',
     status: 'online',
     passwordHash: password,
     publicKeyJwk: publicKeyJwk || undefined,
@@ -136,6 +102,69 @@ app.get('/api/users', (_req, res) => {
     status: userSockets.has(u.id) && userSockets.get(u.id)!.size > 0 ? (u.status === 'in-call' ? 'in-call' : 'online') : 'offline',
   }));
   res.json(safeList);
+});
+
+app.get('/api/users/search', (req, res) => {
+  const query = (req.query.q as string || '').toLowerCase().trim();
+  if (!query) return res.json([]);
+  const matches = Array.from(users.values())
+    .filter(
+      (u) =>
+        u.username.toLowerCase().includes(query) ||
+        u.name.toLowerCase().includes(query)
+    )
+    .map(({ passwordHash, ...u }) => ({
+      ...u,
+      status: userSockets.has(u.id) && userSockets.get(u.id)!.size > 0 ? (u.status === 'in-call' ? 'in-call' : 'online') : 'offline',
+    }));
+  res.json(matches);
+});
+
+app.get('/api/users/by-username/:username', (req, res) => {
+  const { username } = req.params;
+  const target = Array.from(users.values()).find(
+    (u) => u.username.toLowerCase() === username.toLowerCase()
+  );
+  if (!target) return res.status(404).json({ error: 'User not found' });
+  const { passwordHash, ...safeUser } = target;
+  res.json({
+    ...safeUser,
+    status: userSockets.has(target.id) && userSockets.get(target.id)!.size > 0 ? (target.status === 'in-call' ? 'in-call' : 'online') : 'offline',
+  });
+});
+
+app.post('/api/users/:id/contacts', (req, res) => {
+  const { id } = req.params;
+  const { contactId } = req.body;
+  if (!contactId) return res.status(400).json({ error: 'contactId is required' });
+  if (!users.has(contactId)) return res.status(404).json({ error: 'Contact does not exist' });
+
+  if (!userContactsMap.has(id)) {
+    userContactsMap.set(id, new Set());
+  }
+  userContactsMap.get(id)!.add(contactId);
+
+  // Reciprocal add so both see each other
+  if (!userContactsMap.has(contactId)) {
+    userContactsMap.set(contactId, new Set());
+  }
+  userContactsMap.get(contactId)!.add(id);
+
+  broadcastUserDirectory();
+  res.json({ success: true });
+});
+
+app.get('/api/users/:id/contacts', (req, res) => {
+  const { id } = req.params;
+  const contactSet = userContactsMap.get(id) || new Set();
+  const contactList = Array.from(contactSet)
+    .map((cid) => users.get(cid))
+    .filter((u): u is UserRecord => !!u)
+    .map(({ passwordHash, ...u }) => ({
+      ...u,
+      status: userSockets.has(u.id) && userSockets.get(u.id)!.size > 0 ? (u.status === 'in-call' ? 'in-call' : 'online') : 'offline',
+    }));
+  res.json(contactList);
 });
 
 app.put('/api/users/:id/key', (req, res) => {

@@ -38,8 +38,9 @@ export default function App() {
   const [activeView, setActiveView] = useState<'chats' | 'diagnostics' | 'security'>('chats');
   const [showSafetyModal, setShowSafetyModal] = useState(false);
   const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
-  const [verifiedContactIds, setVerifiedContactIds] = useState<string[]>(['user_bob']);
+  const [verifiedContactIds, setVerifiedContactIds] = useState<string[]>([]);
   const [peerTypingMap, setPeerTypingMap] = useState<Record<string, boolean>>({});
+  const [pendingInviteUsername, setPendingInviteUsername] = useState<string | null>(null);
 
   // WebRTC & Cryptography instances
   const webrtcManager = useRef<WebRTCManager>(new WebRTCManager());
@@ -55,6 +56,15 @@ export default function App() {
 
   // Burn timers cache: messageId -> intervalId
   const burnTimersRef = useRef<Map<string, number>>(new Map());
+
+  // Check URL parameters for peer invite
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const invite = params.get('invite');
+    if (invite) {
+      setPendingInviteUsername(invite.trim().toLowerCase());
+    }
+  }, []);
 
   // 1. Initial Load: Check session or auto-select default persona
   useEffect(() => {
@@ -579,12 +589,43 @@ export default function App() {
     }
   };
 
-  const handleSwitchUser = (user: User) => {
-    setCurrentUser(user);
-    localStorage.setItem('ciphercall_user', JSON.stringify(user));
-    localStorage.setItem('ciphercall_token', `token_${user.id}`);
-    sessionKeysCache.current.clear();
+  // Add contact by username
+  const handleAddContactByUsername = async (username: string) => {
+    if (!currentUser) return { success: false, message: 'Not authenticated' };
+    try {
+      const res = await fetch(`/api/users/by-username/${encodeURIComponent(username)}`);
+      if (!res.ok) {
+        return { success: false, message: `No user found with username @${username}` };
+      }
+      const foundUser: User = await res.json();
+      if (foundUser.id === currentUser.id) {
+        return { success: false, message: 'You cannot add yourself.' };
+      }
+
+      await fetch(`/api/users/${currentUser.id}/contacts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactId: foundUser.id }),
+      });
+
+      await fetchUsers();
+      setSelectedContact(foundUser);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Lookup failed' };
+    }
   };
+
+  // Auto connect if user landed from an invite link
+  useEffect(() => {
+    if (currentUser && pendingInviteUsername) {
+      handleAddContactByUsername(pendingInviteUsername).then((res) => {
+        if (res.success) {
+          setPendingInviteUsername(null);
+        }
+      });
+    }
+  }, [currentUser?.id, pendingInviteUsername]);
 
   const handleLogout = () => {
     localStorage.removeItem('ciphercall_user');
@@ -612,9 +653,10 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
-      {/* 1. Auth Modal if not logged in */}
+      {/* 1. Real Auth Modal if not logged in */}
       {!currentUser && (
         <AuthModal
+          initialUsername={pendingInviteUsername || ''}
           onLoginSuccess={(user, token) => {
             setCurrentUser(user);
             setAuthToken(token);
@@ -633,8 +675,6 @@ export default function App() {
           onOpenKeyManagement={() => setActiveView('security')}
           activeView={activeView}
           setActiveView={setActiveView}
-          allUsers={allUsers}
-          onSwitchUser={handleSwitchUser}
         />
       )}
 
@@ -655,10 +695,12 @@ export default function App() {
               <ContactSidebar
                 contacts={allUsers}
                 currentUserId={currentUser.id}
+                currentUsername={currentUser.username}
                 selectedContact={selectedContact}
                 onSelectContact={(c) => setSelectedContact(c)}
                 onStartCall={handleStartCall}
                 onStartLoopbackTest={handleStartLoopbackTest}
+                onAddContactByUsername={handleAddContactByUsername}
               />
 
               {/* Chat View */}
